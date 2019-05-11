@@ -6,7 +6,7 @@
 
 #---------------------------------#
 # Tecmake Version
-VERSION = 4.16
+VERSION = 4.17
 
 
 #---------------------------------#
@@ -17,6 +17,9 @@ build: tecmake
 
 #---------------------------------#
 # System Variables Definitions
+
+GTK_BASE=/opt/local
+#GTK_MAC=Yes
 
 ifndef TEC_UNAME
   # Base Definitions
@@ -579,7 +582,8 @@ ifneq ($(findstring MacOS, $(TEC_UNAME)), )
   #Homebrew
   #FREETYPE_INC := /usr/local/include/freetype2
   #Fink
-  FREETYPE_INC := /sw/include/freetype2
+  #FREETYPE_INC := /sw/include/freetype2
+  FREETYPE_INC := /opt/local/include/freetype2
 endif
 
 # Definitions for GTK
@@ -591,9 +595,9 @@ else
   # Homebrew GTK port
   #  GTK = /usr/local
   # Fink GTK port
-    GTK = /sw
+  #  GTK = /sw
   # MacPorts GTK
-  #  GTK = /opt/local
+  GTK = /opt/local
   # GTK-OSX Framework
   #   GTK := /gtk/inst
   else
@@ -745,8 +749,11 @@ ifneq ($(findstring MacOS, $(TEC_UNAME)), )
   #STDINCS += /usr/local/include
   #LDIR += /usr/local/lib
   #Fink
-  STDINCS += /sw/include
-  LDIR += /sw/lib
+  #STDINCS += /sw/include
+  #LDIR += /sw/lib
+  #Macports
+  STDINCS += /opt/local/include
+  LDIR += /opt/local/lib
   
   UNIX_BSD = Yes
   X11_LIBS := Xp Xext X11
@@ -762,13 +769,13 @@ ifneq ($(findstring MacOS, $(TEC_UNAME)), )
     STDLDFLAGS := -bundle -undefined dynamic_lookup
   endif
   ifdef USE_OPENGL
-    LFLAGS = -framework OpenGL
-    OPENGL_LIBS :=
-    
+#      LFLAGS = -framework OpenGL
+      LFLAGS = -L /opt/local/lib
+      OPENGL_LIBS := GL GLU
     ifeq ($(TEC_SYSMINOR), 5)
       #Darwin9 Only - OpenGL bug fix for Fink, when the message bellow appears
       #   ld: cycle in dylib re-exports with /usr/X11R6/lib/libGL.dylib
-      #LFLAGS += -dylib_file /System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libGL.dylib:/System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libGL.dylib
+      LFLAGS += -dylib_file /System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libGL.dylib:/System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libGL.dylib
     endif
   endif
   ifdef USE_OPENMP
@@ -800,10 +807,15 @@ TECTOOLS_HOME ?= ../..
 IUP   ?= $(TECTOOLS_HOME)/iup
 CD    ?= $(TECTOOLS_HOME)/cd
 IM    ?= $(TECTOOLS_HOME)/im
-LUA   ?= $(TECTOOLS_HOME)/lua
-LUA51 ?= $(TECTOOLS_HOME)/lua5.1
-LUA52 ?= $(TECTOOLS_HOME)/lua52
-LUA53 ?= $(TECTOOLS_HOME)/lua53
+#LUA   ?= $(TECTOOLS_HOME)/lua
+#LUA51 ?= $(TECTOOLS_HOME)/lua51
+#LUA52 ?= $(TECTOOLS_HOME)/lua52
+#LUA53 ?= $(TECTOOLS_HOME)/lua53
+LUA ?= /usr/local
+LUA51 ?= /usr/local
+LUA52 ?= /usr/local
+LUA53 ?= /usr/local
+
 FTGL  ?= $(TECTOOLS_HOME)/ftgl
 # Freetype and zlib in Linux we use from the system
 
@@ -843,7 +855,7 @@ ifdef USE_LUA50
 endif
 
 ifdef USE_LUA51
-  LUA_SFX := 5.1
+  LUA_SFX := 51
   LIBLUA_SFX := 51
   override USE_LUA = Yes
   LUA := $(LUA51)
@@ -909,7 +921,7 @@ ifdef USE_IUPCONTROLS
   override USE_CD = Yes
   override USE_IUP = Yes
   IUP_LIB ?= $(IUP)/lib/$(TEC_UNAME_LIB_DIR)
-  
+
   ifdef USE_IUPLUA
     ifdef USE_STATIC
       SLIB += $(IUPLUA_LIB)/libiupluacontrols$(LIBLUA_SFX).a
@@ -918,7 +930,7 @@ ifdef USE_IUPCONTROLS
     endif
     override USE_CDLUA = Yes
   endif
-  
+
   ifdef USE_STATIC
     SLIB += $(IUP_LIB)/libiupcontrols.a
   else
@@ -932,7 +944,7 @@ ifdef USE_IUPGLCONTROLS
   override LINK_FTGL = Yes
   IUP_LIB ?= $(IUP)/lib/$(TEC_UNAME_LIB_DIR)
   CD_LIB ?= $(CD)/lib/$(TEC_UNAME_LIB_DIR)
-  
+
   ifdef USE_IUPLUA
     ifdef USE_STATIC
       SLIB += $(IUPLUA_LIB)/libiupluaglcontrols$(LIBLUA_SFX).a
@@ -940,7 +952,7 @@ ifdef USE_IUPGLCONTROLS
       LIBS += iupluaglcontrols$(LIBLUA_SFX)
     endif
   endif
-  
+
   ifdef USE_STATIC
     SLIB += $(IUP_LIB)/libiupglcontrols.a
   else
@@ -951,7 +963,7 @@ endif
 ifdef USE_IUPWEB
   override USE_IUP = Yes
   override LINK_WEBKIT = Yes
-  
+
   ifdef USE_IUPLUA
     ifdef USE_STATIC
       SLIB += $(IUPLUA_LIB)/libiupluaweb$(LIBLUA_SFX).a
@@ -959,7 +971,7 @@ ifdef USE_IUPWEB
       LIBS += iupluaweb$(LIBLUA_SFX)
     endif
   endif
-  
+
   ifdef USE_STATIC
     SLIB += $(IUP_LIB)/libiupweb.a
   else
@@ -992,7 +1004,7 @@ endif
 ifdef USE_IUPLUA
   override USE_IUP = Yes
   IUPLUA_LIB ?= $(IUP)/lib/$(TEC_UNAME_LIBLUA_DIR)
-  
+
   ifdef USE_STATIC
     ifdef USE_CD
       ifeq ($(findstring iupluacd, $(LIBNAME)), )
@@ -1022,7 +1034,8 @@ ifdef USE_IUPLUA
 endif
 
 ifdef USE_LUA
-  LUA_LIB ?= $(LUA)/lib/$(TEC_UNAME)
+#  LUA_LIB ?= $(LUA)/lib/$(TEC_UNAME)
+  LUA_LIB ?= $(LUA)/lib
   ifdef USE_STATIC
     ifndef NO_LUALIB
       SLIB += $(LUA_LIB)/liblualib$(LUA_SFX).a
@@ -1043,7 +1056,7 @@ ifdef USE_LUA
     endif
   endif
 
-  LUA_INC ?= $(LUA)/include
+  LUA_INC ?= $(LUA)/include $(LUA)/include/lua/$(LUA_SUFFIX)
   INCLUDES += $(LUA_INC)
 
   LUA_BIN ?= $(LUA)/bin/$(TEC_UNAME)
@@ -1083,7 +1096,7 @@ ifdef USE_IUP
       override USE_MOTIF = Yes
     endif
   endif
-  
+
   IUP_LIB ?= $(IUP)/lib/$(TEC_UNAME_LIB_DIR)
 
   ifdef USE_STATIC
@@ -1129,23 +1142,23 @@ ifdef USE_CD
       endif
     endif
   endif
-  
+
   CD_LIB ?= $(CD)/lib/$(TEC_UNAME_LIB_DIR)
-  
+
   ifdef USE_STATIC
     ifdef USE_XRENDER
       CHECK_XRENDER = Yes
       SLIB += $(CD_LIB)/libcdcontextplus.a
       LIBS += Xrender Xft
     endif
-    
+
     ifdef USE_CAIRO
       # To use Cairo with X11 base driver (NOT for GDK)
       # Can NOT be used together with XRender
       SLIB += $(CD_LIB)/libcdcairo.a
       LINK_CAIRO = Yes
     endif
-    
+
     SLIB += $(CD_LIB)/libcd$(CD_SUFFIX).a
   else
     ifdef USE_XRENDER
@@ -1193,18 +1206,18 @@ endif
 
 ifdef USE_IM
   IM_LIB ?= $(IM)/lib/$(TEC_UNAME_LIB_DIR)
-  
+
   ifndef NO_ZLIB
     LINK_ZLIB = Yes
   endif
-  
+
   ifdef USE_STATIC
     SLIB += $(IM_LIB)/libim.a
   else
     LIBS += im
     LDIR += $(IM_LIB)
   endif
-  
+
   # In Linux, always use libpng from the system (since 4.15)
   LIBS += png
 
@@ -1231,14 +1244,14 @@ endif
 ifdef USE_FTGL
   LINK_FTGL = Yes
   USE_FREETYPE = Yes
-  
+
   FTGL_INC ?= $(FTGL)/include
   INCLUDES += $(FTGL_INC)
 endif
 
 ifdef LINK_FTGL
   LINK_FREETYPE = Yes
-  
+
   FTGL_LIB ?= $(FTGL)/lib/$(TEC_UNAME)
   ifdef USE_STATIC
     SLIB += $(FTGL_LIB)/libftgl.a
@@ -1249,8 +1262,7 @@ ifdef LINK_FTGL
 endif
 
 ifdef USE_FREETYPE
-  LINK_FREETYPE = Yes
-  
+  LINK_FREETYPE = Yes  
   STDINCS += $(FREETYPE_INC)
 endif
 
@@ -1327,24 +1339,24 @@ ifdef USE_GTK
     CHECK_GTK = Yes
     ifneq ($(findstring MacOS, $(TEC_UNAME)), )
   # Option 1 - Fink GTK port
-      LDIR += $(GTK)/lib
-      ifndef NO_OVERRIDE
-        override USE_X11 = Yes
-      endif
-      ifdef GTK_MAC
-        LIBS += gtk-quartz-$(GTKSFX).0 gdk-quartz-$(GTKSFX).0 pango???-1.0
-      else
-        LIBS += gtk-x11-$(GTKSFX).0 gdk-x11-$(GTKSFX).0 pangox-1.0
-      endif
+  #    LDIR += $(GTK)/lib
+  #    ifndef NO_OVERRIDE
+  #      override USE_X11 = Yes
+  #    endif
+  #    ifdef GTK_MAC
+  #      LIBS += gtk-quartz-$(GTKSFX).0 gdk-quartz-$(GTKSFX).0 pango???-1.0
+  #    else
+  #      LIBS += gtk-x11-$(GTKSFX).0 gdk-x11-$(GTKSFX).0 pangox-1.0
+  #    endif
   # Option 2 - Imendio Framework
   #   STDINCS += /Library/Frameworks/Gtk.framework/Headers
   #   STDINCS += /Library/Frameworks/GLib.framework/Headers
   #   STDINCS += /Library/Frameworks/Cairo.framework/Headers
   #   LFLAGS += -framework Gtk
   # Option 3 - GTK-OSX Framework
-  #   LDIR += $(GTK)/lib
-  #   LFLAGS += -framework Carbon
-  #   LIBS += gtk-quartz-$(GTKSFX).0 gdk-quartz-$(GTKSFX).0 pangoft2-1.0
+     LDIR += $(GTK)/lib
+     LFLAGS += -framework Carbon
+     LIBS += gtk-quartz-$(GTKSFX).0 gdk-quartz-$(GTKSFX).0 pangoft2-1.0
 
       LIBS += freetype
     else
@@ -1629,7 +1641,7 @@ $(TARGETDIR)/$(TARGETSLIBNAME) : $(LUAS) $(OBJS) $(EXTRADEPS)
 application: $(TARGETDIR)/$(TARGETAPPNAME)
 
 $(TARGETDIR)/$(TARGETAPPNAME) : $(LUAS) $(OBJS) $(EXTRADEPS)
-	@echo ''; echo Tecmake: linking $(@F) ...
+	@echo ''; echo Tecmake: linking $(@F) $(SLIB)...
 	$(ECHO)$(LINKER) -o $@ $(OBJS) $(SLIB) $(LFLAGS)
 	@if [ ! -z "$(STRIP)" ]; then \
 	   echo ''; echo 'Tecmake: striping debug information' ;\
@@ -1756,7 +1768,7 @@ $(DEPEND): $(MAKENAME)
 	  @which $(CPPC) 2> /dev/null 1>&2 ;\
 	  if [ $$? -eq 0 ]; then \
 	    echo "Tecmake: Building Dependencies ... [ $(DEPEND) ] (can be slow)" ;\
-	    $(CPPC) $(DEPFLAGS) $(DEPINCS) $(DEFINES) $(STDDEFS) -MM $(SOURCES) | \
+	    $(CPPC) $(DEPFLAGS) $(DEPINCS) $(STDINCS) $(PKGINCS) $(DEFINES) $(STDDEFS) -MM $(SOURCES) | \
 	    sed -e '1,$$s/^\([^ ]\)/$$(OBJDIR)\/\1/' > $(DEPEND) ;\
 	  else \
 	    echo "" ;\
