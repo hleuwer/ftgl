@@ -8,18 +8,18 @@
 # Tecmake Version
 VERSION = 4.17
 
-
 #---------------------------------#
 # First target
 .PHONY: build
 build: tecmake
 
-
 #---------------------------------#
 # System Variables Definitions
 
-GTK_BASE=/opt/local
-#GTK_MAC=Yes
+ifeq ($(TEC_SYSNAME), MacOS)
+   GTK_BASE=/opt/local
+   GTK_MAC=Yes
+endif
 
 ifndef TEC_UNAME
   # Base Definitions
@@ -78,7 +78,7 @@ ifndef TEC_UNAME
   ifneq ($(findstring aarch64, $(TEC_SYSARCH)), )
     TEC_SYSARCH:=arm64
   endif
-  
+
   # Compose
   TEC_SYSRELEASE:=$(TEC_SYSVERSION).$(TEC_SYSMINOR)
   TEC_UNAME:=$(TEC_SYSNAME)$(TEC_SYSVERSION)$(TEC_SYSMINOR)
@@ -122,7 +122,7 @@ ifndef TEC_UNAME
       BUILD_64=Yes
       TEC_UNAME:=$(TEC_UNAME)_ia64
     endif
-    
+
     # arm Linux
     ifeq ($(TEC_SYSARCH), arm)
       TEC_UNAME:=$(TEC_UNAME)_arm
@@ -133,12 +133,12 @@ ifndef TEC_UNAME
       BUILD_64=Yes
       TEC_UNAME:=$(TEC_UNAME)_arm64
     endif    
-    
+
     # Linux Distribution
     TEC_DISTNAME=$(shell lsb_release -is)
     TEC_DISTVERSION=$(shell lsb_release -rs|cut -f1 -d.)
     TEC_DIST:=$(TEC_DISTNAME)$(TEC_DISTVERSION)
-    
+
     # arm Linux (Raspberry Pi) -- NOT GOOD must be improved
     ifeq ($(TEC_SYSARCH), arm)
 	    # Raspbian GNU/Linux 7 (wheezy)
@@ -202,7 +202,13 @@ sysinfo:
 	@echo 'OPENGL_LIB = $(OPENGL_LIB)'
 	@echo 'OPENGL_INC = $(OPENGL_INC)'
 	@echo ''
-
+	@echo 'LUA_SFX = $(LUA_SFX)'	
+	@echo 'LUA_VER = $(LUA_VER)'
+	@echo 'USE_LUA51 = $(USE_LUA51)'
+	@echo 'USE_LUA52 = $(USE_LUA52)'
+	@echo 'USE_LUA53 = $(USE_LUA53)'
+	@echo 'INCLUDES = $(INCLUDES)'
+	@echo 'CFLAGS = $(CFLAGS)'
 
 #---------------------------------#
 # Known Platforms
@@ -583,7 +589,9 @@ ifneq ($(findstring MacOS, $(TEC_UNAME)), )
   #FREETYPE_INC := /usr/local/include/freetype2
   #Fink
   #FREETYPE_INC := /sw/include/freetype2
+  #MacPorts
   FREETYPE_INC := /opt/local/include/freetype2
+  #FREETYPE_INC := /usr/local/include/freetype
 endif
 
 # Definitions for GTK
@@ -626,6 +634,7 @@ ifneq ($(findstring Linux, $(TEC_UNAME)), )
       X11_LIB := /usr/X11R6/lib64
     endif
   else
+    STDFLAGS += -fPIC
     X11_LIB := /usr/X11R6/lib
   endif
   X11_INC := /usr/X11R6/include
@@ -754,11 +763,16 @@ ifneq ($(findstring MacOS, $(TEC_UNAME)), )
   #Macports
   STDINCS += /opt/local/include
   LDIR += /opt/local/lib
+  # leu
+  STDINCS += /usr/local/include
+  LDIR += /usr/local/lib
   
   UNIX_BSD = Yes
   X11_LIBS := Xp Xext X11
-  X11_LIB := /usr/X11R6/lib /usr/X11/lib
-  X11_INC := /usr/X11R6/include /usr/X11/include
+#  X11_LIB := /usr/X11R6/lib /usr/X11/lib
+#  X11_INC := /usr/X11R6/include /usr/X11/include
+  X11_LIB := /opt/X11/lib
+  X11_INC := /opt/X11/include
   MOTIF_INC := /usr/OpenMotif/include
   MOTIF_LIB := /usr/OpenMotif/lib
   ifdef BUILD_DYLIB
@@ -770,7 +784,8 @@ ifneq ($(findstring MacOS, $(TEC_UNAME)), )
   endif
   ifdef USE_OPENGL
 #      LFLAGS = -framework OpenGL
-      LFLAGS = -L /opt/local/lib
+       LFLAGS = -L /opt/X11/lib
+#      LFLAGS = -L /opt/local/lib
       OPENGL_LIBS := GL GLU
     ifeq ($(TEC_SYSMINOR), 5)
       #Darwin9 Only - OpenGL bug fix for Fink, when the message bellow appears
@@ -857,6 +872,7 @@ endif
 ifdef USE_LUA51
   LUA_SFX := 51
   LIBLUA_SFX := 51
+  LUA_VER := 5.1
   override USE_LUA = Yes
   LUA := $(LUA51)
   NO_LUALIB := Yes
@@ -865,6 +881,7 @@ endif
 ifdef USE_LUA52
   LUA_SFX := 52
   LIBLUA_SFX := 52
+  LUA_VER := 5.2
   override USE_LUA = Yes
   LUA := $(LUA52)
   NO_LUALIB := Yes
@@ -873,6 +890,7 @@ endif
 ifdef USE_LUA53
   LUA_SFX := 53
   LIBLUA_SFX := 53
+  LUA_VER := 5.3
   override USE_LUA = Yes
   LUA := $(LUA53)
   NO_LUALIB := Yes
@@ -1056,10 +1074,12 @@ ifdef USE_LUA
     endif
   endif
 
-  LUA_INC ?= $(LUA)/include $(LUA)/include/lua/$(LUA_SUFFIX)
+#  LUA_INC ?= $(LUA)/include $(LUA)/include/lua/$(LUA_SUFFIX)
+  LUA_INC ?= $(LUA)/include/lua/$(LUA_VER)
   INCLUDES += $(LUA_INC)
 
-  LUA_BIN ?= $(LUA)/bin/$(TEC_UNAME)
+# leu  LUA_BIN ?= $(LUA)/bin/$(TEC_UNAME)
+  LUA_BIN ?= $(LUA)/bin
   ifdef USE_BIN2C_LUA
     BIN2C := $(LUA_BIN)/lua$(LUA_SFX) $(BIN2C_PATH)bin2c.lua
   else
@@ -1493,7 +1513,7 @@ endif
 # Library flags for application and dynamic library linker
 LFLAGS += $(LDIR) $(LIBS) $(PKGLIBS)
 # C compiler flags
-CFLAGS   = $(FLAGS) $(STDFLAGS) $(INCLUDES) $(STDINCS) $(PKGINCS) $(EXTRAINCS) $(DEFINES) $(STDDEFS)
+CFLAGS   = $(FLAGS) $(STDFLAGS) $(WARNFLAGS) $(INCLUDES) $(STDINCS) $(PKGINCS) $(EXTRAINCS) $(DEFINES) $(STDDEFS)
 # C++ compiler flags
 CXXFLAGS = $(CPPFLAGS) $(STDFLAGS) $(INCLUDES) $(STDINCS) $(PKGINCS) $(EXTRAINCS) $(DEFINES) $(STDDEFS)
 
@@ -1582,7 +1602,8 @@ endif
 
 .PHONY: print-start
 print-start:
-	@echo ''; echo 'Tecmake: starting [ $(TARGETNAME):$(TEC_UNAME) ]'
+	@echo 'Tecmake: starting [ $(TARGETNAME):$(TEC_UNAME)]'
+#	@echo 'Tecmake: starting [ $(TARGETNAME):$(TEC_UNAME), app=$(APPNAME), lib=$(LIBNAME), target=$(TARGET), dlib=$(TARGETDLIBNAME), slib=$(TARGETSLIBNAME), tdir=$(TARGETDIR)]'
 
 .PHONY: system-check
 system-check:
@@ -1861,7 +1882,6 @@ $(UNAMES):
 	@cwd=`csh -c "\\pwd"` ; home=`csh -c "cd;\\pwd"` ;\
 	 dir=`echo $$cwd | sed -e "s|$$home/||"` ;\
 	 xterm -bg black -fg lightblue -T "Tecmake: $@ ($(TARGETNAME))" -e ssh $@ $(REMOTE) $$dir $(TECMAKEFLAGS) $(MAKEFLAGS) & 2> /dev/null
-
 
 #---------------------------------#
 

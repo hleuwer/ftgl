@@ -7,4 +7,7 @@ endif
 .PHONY: do_all
 
 do_all:
-	@$(TECMAKE_CMD) 
+	@$(TECMAKE_CMD)
+
+clean clean-obj clean-all clean-target:
+	@$(TECMAKE_CMD) -f ../tecmake.mak $@
