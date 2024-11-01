@@ -1,5 +1,6 @@
 .PHONY: do_all
-TEC_UNAME = $(shell ls lib)
+#TEC_UNAME = $(shell ls lib)
+TEC_UNAME=$(shell ~/bin/tecmake_init --uname)
 INSTALL_LIB = /usr/local/lib
 do_all:
 	@$(MAKE) --no-print-directory -C ./src/ do_all
